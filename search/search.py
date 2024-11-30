@@ -1,30 +1,10 @@
-# search.py
-# ---------
-# Licensing Information:  You are free to use or extend these projects for
-# educational purposes provided that (1) you do not distribute or publish
-# solutions, (2) you retain this notice, and (3) you provide clear
-# attribution to UC Berkeley, including a link to http://ai.berkeley.edu.
-# 
-# Attribution Information: The Pacman AI projects were developed at UC Berkeley.
-# The core projects and autograders were primarily created by John DeNero
-# (denero@cs.berkeley.edu) and Dan Klein (klein@cs.berkeley.edu).
-# Student side autograding was added by Brad Miller, Nick Hay, and
-# Pieter Abbeel (pabbeel@cs.berkeley.edu).
-
-
-"""
-In search.py, you will implement generic search algorithms which are called by
-Pacman agents (in searchAgents.py).
-"""
-
 import util
-from util import*
+from util import *
+
 class SearchProblem:
     """
     This class outlines the structure of a search problem, but doesn't implement
     any of the methods (in object-oriented terminology: an abstract class).
-
-    You do not need to change anything in this class, ever.
     """
 
     def getStartState(self):
@@ -64,77 +44,135 @@ class SearchProblem:
 
 def tinyMazeSearch(problem):
     """
-    Returns a sequence of moves that solves tinyMaze.  For any other maze, the
+    Returns a sequence of moves that solves tinyMaze. For any other maze, the
     sequence of moves will be incorrect, so only use this for tinyMaze.
     """
     from game import Directions
     s = Directions.SOUTH
     w = Directions.WEST
-    return  [s, s, w, s, w, w, s, w]
+    return [s, s, w, s, w, w, s, w]
+
 
 def depthFirstSearch(problem):
     """
     Search the deepest nodes in the search tree first.
-
-    Your search algorithm needs to return a list of actions that reaches the
-    goal. Make sure to implement a graph search algorithm.
-
-    To get started, you might want to try some of these simple commands to
-    understand the search problem that is being passed in:
-
-    print("Start:", problem.getStartState())
-    print("Is the start a goal?", problem.isGoalState(problem.getStartState()))
-    print("Start's successors:", problem.getSuccessors(problem.getStartState()))
     """
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    stack = Stack()  # Initialize a stack
+    start = problem.getStartState()
+    stack.push((start, []))  # Push the start state with an empty path
+    visited = set()
+
+    while not stack.isEmpty():
+        state, path = stack.pop()
+        if state in visited:
+            continue
+        visited.add(state)
+
+        if problem.isGoalState(state):
+            return path
+
+        for successor, action, _ in problem.getSuccessors(state):
+            if successor not in visited:
+                stack.push((successor, path + [action]))
+
+    return []
+
 
 def breadthFirstSearch(problem):
-    """Search the shallowest nodes in the search tree first."""
-    "*** YOUR CODE HERE ***"
-    #util.raiseNotDefined()
-    """ Search the shallowest nodes in the search tree first. """
-    currPath = []           # The path that is popped from the frontier in each loop
-    currState =  problem.getStartState()    # The state(position) that is popped for the frontier in each loop
-    print(f"currState: {currState}")
-    if problem.isGoalState(currState):     # Checking if the start state is also a goal state
-        return currPath
+    """
+    Search the shallowest nodes in the search tree first.
+    """
+    from util import Queue  # Import Queue
+    start = problem.getStartState()  # Start state
+    if problem.isGoalState(start):  # Check if start is the goal
+        return []
 
     frontier = Queue()
-    frontier.push( (currState, currPath) )     # Insert just the start state, in order to pop it first
+    frontier.push((start, []))  # Push the start state with an empty path
     explored = set()
-    while not frontier.isEmpty():
-        currState, currPath = frontier.pop()    # Popping a state and the corresponding path
-        # To pass autograder.py question2:
-        if problem.isGoalState(currState):
-            return currPath
-        explored.add(currState)
-        frontierStates = [ t[0] for t in frontier.list ]
-        for s in problem.getSuccessors(currState):
-            if s[0] not in explored and s[0] not in frontierStates:
-                # Lecture code:
-                # if problem.isGoalState(s[0]):
-                #     return currPath + [s[1]]
-                frontier.push( (s[0], currPath + [s[1]]) )      # Adding the successor and its path to the frontier
 
-    return []       # If this point is reached, a solution could not be found.
+    while not frontier.isEmpty():
+        state, path = frontier.pop()
+
+        if state in explored:
+            continue
+
+        explored.add(state)
+
+        if problem.isGoalState(state):
+            return path
+
+        for successor, action, stepCost in problem.getSuccessors(state):
+            if successor not in explored:
+                new_path = path + [action]
+                frontier.push((successor, new_path))
+
+    return []
+
 
 def uniformCostSearch(problem):
-    """Search the node of least total cost first."""
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    """
+    Search the node of least total cost first.
+    """
+    pq = PriorityQueue()  # Min-priority queue
+    start = problem.getStartState()
+    pq.push((start, []), 0)  # Push the start state with cost 0
+    visited = set()
+    cost_so_far = {start: 0}  # Store the cost to reach each state
+
+    while not pq.isEmpty():
+        state, path = pq.pop()
+        if state in visited:
+            continue
+        visited.add(state)
+
+        if problem.isGoalState(state):
+            return path
+
+        for successor, action, step_cost in problem.getSuccessors(state):
+            new_cost = cost_so_far[state] + step_cost
+            if successor not in visited or new_cost < cost_so_far.get(successor, float('inf')):
+                cost_so_far[successor] = new_cost
+                pq.push((successor, path + [action]), new_cost)
+
+    return []
+
 
 def nullHeuristic(state, problem=None):
     """
     A heuristic function estimates the cost from the current state to the nearest
-    goal in the provided SearchProblem.  This heuristic is trivial.
+    goal in the provided SearchProblem. This heuristic is trivial.
     """
     return 0
 
+
 def aStarSearch(problem, heuristic=nullHeuristic):
-    """Search the node that has the lowest combined cost and heuristic first."""
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    """
+    Search the node that has the lowest combined cost and heuristic first.
+    """
+    pq = PriorityQueue()  
+    start = problem.getStartState()
+    pq.push((start, []), 0)  
+    visited = set()
+    cost_so_far = {start: 0}  
+
+    while not pq.isEmpty():
+        state, path = pq.pop()
+        if state in visited:
+            continue
+        visited.add(state)
+
+        if problem.isGoalState(state):
+            return path
+
+        for successor, action, step_cost in problem.getSuccessors(state):
+            new_cost = cost_so_far[state] + step_cost
+            heuristic_cost = new_cost + heuristic(successor, problem)
+            if successor not in visited or new_cost < cost_so_far.get(successor, float('inf')):
+                cost_so_far[successor] = new_cost
+                pq.push((successor, path + [action]), heuristic_cost)
+
+    return []
 
 
 # Abbreviations
